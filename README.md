@@ -28,3 +28,34 @@ It works on everything you want in the form of **YYYY-MM-DD-NAME.EXT**.
 	0 	keeps everything
 	N 	keeps the last N
 
+#Data structure example
+We want to keep 12 months, 4 weeks and 7 days.
+
+    ./backup-keeper.sh -k 12 -l 4 -d 7 -p directory
+
+##Before running backup-keeper
+
+    directory
+		|-- 2015-10-23-file.tar.gz
+		|-- 2015-10-22-file.tar.gz
+		|-- ...
+		|-- 2015-10-17-file.tar.gz
+		|-- ...
+		|-- 2015-09-30-file.tar.gz
+		|-- ...
+
+##After running backup-keep
+
+    directory
+	    |-- monthly
+			|-- 2015-10-01-file.tar.gz
+			|-- 2015-09-01-file.tar.gz
+			|-- ...
+	    |-- weekly
+			|-- 2015-10-19-file.tar.gz
+			|-- 2015-10-12-file.tar.gz	
+			|-- ...				
+		|-- 2015-10-23-file.tar.gz
+		|-- 2015-10-22-file.tar.gz
+		|-- ...
+		|-- 2015-10-16-file.tar.gz
