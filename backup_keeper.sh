@@ -1,4 +1,12 @@
 #!/bin/bash
+##
+## backup-keeper.sh
+## ==
+## Retain backups with a time based logic.
+## 
+## Developed by 3DGIS (http://www.3dgis.it)
+## Licensed under the terms of the GNU Public License Version 2
+##
 
 show_help() {
 cat << EOF
@@ -9,18 +17,19 @@ Usage: ${0##*/} [-h] [-m MONTHLY_ARCHIVE_DIR] [-w WEEKLY_ARCHIVE_DIR]
 Scans for items in YYYY-MM-DD_NAME.EXTENSION format and organizes them
 with monthly and weekly archiviation.
 
-    -h          display this help and exit
-    -m		monthly archive directory name. it will be created if missing
-    -w		weekly archive directory name. it will be created if missing
-    -k		number of monthly items to retain 
-    -l		number of weekly items to retain
-    -d		number of weekly items to retain
-    -p		path containing items to keep 
+Options:
+	-h	display this help and exit
+	-m	monthly archive directory name. it will be created if missing
+	-w	weekly archive directory name. it will be created if missing
+	-k	number of monthly items to retain 
+	-l	number of weekly items to retain
+	-d	number of weekly items to retain
+	-p	path containing items to keep 
 		
-		Retained item number follows this rule:
-		-1 	disable archiving
-		0 	keeps everything
-		N 	keeps the last N
+Retained item number follows this rule:
+	-1 	disable archiving
+	0 	keeps everything
+	N 	keeps the last N
 EOF
 }
 
@@ -129,7 +138,7 @@ cleanarchive() {
 				monthlyfiles=$(find $monthly_archive_path -type f -iname \*$current_name | sort -r)
 				for af in $monthlyfiles; do
 					current_monthly=$((current_monthly + 1))
-					if [ "$current_monthly" -gt "$monthly_retain" ]; then
+					if [ "$monthly_retain" -ne 0 ] && [ "$current_monthly" -gt "$monthly_retain" ]; then
 						echo "Deleting archived $af"
 						rm $af
 					else
@@ -142,7 +151,7 @@ cleanarchive() {
 				weeklyfiles=$(find $weekly_archive_path -type f -iname \*$current_name | sort -r)
 				for af in $weeklyfiles; do
 					current_weekly=$((current_weekly + 1))
-					if [ "$current_weekly" -gt "$weekly_retain" ]; then
+					if [ "$weekly_retain" -ne 0 ] && [ "$current_weekly" -gt "$weekly_retain" ]; then
 						echo "Deleting archived $af"
 						rm $af
 					else
@@ -196,7 +205,7 @@ for f in $fileslist; do
 	fi
 
 	current_daily=$((current_daily + 1))
-	if [ "$current_daily" -gt "$daily_retain" ]; then
+	if [ "$daily_retain" -ne 0 ] && [ "$current_daily" -gt "$daily_retain" ]; then
 		echo "Deleting $filename"
 		rm $f
 	else
