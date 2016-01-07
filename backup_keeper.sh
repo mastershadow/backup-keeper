@@ -133,32 +133,32 @@ echo "END DEBUG"
 #vardebug;
 
 cleanarchive() {
-			if [ "$monthly_retain" -ne -1 ]; then
-				echo "==> Clearing monthly archive for $current_name"
-				monthlyfiles=$(find $monthly_archive_path -type f -iname \*$current_name | sort -r)
-				for af in $monthlyfiles; do
-					current_monthly=$((current_monthly + 1))
-					if [ "$monthly_retain" -ne 0 ] && [ "$current_monthly" -gt "$monthly_retain" ]; then
-						echo "Deleting archived $af"
-						rm $af
-					else
-						echo "Keeping archived $af"
-					fi
-				done
+	if [ "$monthly_retain" -ne -1 ]; then
+		echo "==> Clearing monthly archive for $current_name"
+		monthlyfiles=$(find $monthly_archive_path -type f -iname \*$current_name | sort -r)
+		for af in $monthlyfiles; do
+			current_monthly=$((current_monthly + 1))
+			if [ "$monthly_retain" -ne 0 ] && [ "$current_monthly" -gt "$monthly_retain" ]; then
+	    		echo "Deleting archived $af"
+				rm $af
+			else
+				echo "Keeping archived $af"
 			fi
-			if [ "$weekly_retain" -ne -1 ]; then
-				echo "==> Clearing weekly archive for $current_name"
-				weeklyfiles=$(find $weekly_archive_path -type f -iname \*$current_name | sort -r)
-				for af in $weeklyfiles; do
-					current_weekly=$((current_weekly + 1))
-					if [ "$weekly_retain" -ne 0 ] && [ "$current_weekly" -gt "$weekly_retain" ]; then
-						echo "Deleting archived $af"
-						rm $af
-					else
-						echo "Keeping archived $af"
-					fi
-				done
+		done
+	fi
+	if [ "$weekly_retain" -ne -1 ]; then
+		echo "==> Clearing weekly archive for $current_name"
+		weeklyfiles=$(find $weekly_archive_path -type f -iname \*$current_name | sort -r)
+		for af in $weeklyfiles; do
+			current_weekly=$((current_weekly + 1))
+			if [ "$weekly_retain" -ne 0 ] && [ "$current_weekly" -gt "$weekly_retain" ]; then
+				echo "Deleting archived $af"
+				rm $af
+			else
+				echo "Keeping archived $af"
 			fi
+		done
+	fi
 }
 
 declare -A items
@@ -174,7 +174,9 @@ for f in $fileslist; do
 	date=${filename:0:10}
 	name=${filename:11}
 	month=${date:0:7}
-	week=${date:0:5}$(date -d "$date" +%V)
+    weeknum=$(date -d "$date" +%W)
+	week=${date:0:5}$weeknum
+    week_user=${date:0:5}$(printf "%02d" $(( $weeknum + 1 )))
 
 	if [ ! "$current_name" == "$name" ]; then
 		echo "==> Name changed from $current_name to $name"
@@ -193,15 +195,38 @@ for f in $fileslist; do
 	if [ ! "$current_month" == "$month" ]; then
 		current_month=$month
 		echo "Current month $month"
-		echo "Copying $filename to archive"
-		cp $f $monthly_archive_path/$filename
+        archive_check=($monthly_archive_path/$month*$name)
+        if [ ! -e "${archive_check[0]}" ];
+        then
+		    echo "Copying $filename to monthly archive"
+       		cp $f $monthly_archive_path/$filename
+        fi
 	fi
 
 	if [ ! "$current_week" == "$week" ]; then
 		current_week=$week
-		echo "Current week $week"
-		echo "Copying $filename to archive"
-		cp $f $weekly_archive_path/$filename
+		echo "Current week $week_user"
+
+        offset=$(date -d $date +%u)
+        sow=$(date -d "$date -$offset days +1 day" +%F)
+        eow=$(date -d "$sow +1 week -1 day" +%F)
+        
+        curdate=$sow
+        already_archived=0
+        while [ "$(date -d "$curdate" +%Y%m%d)" -lt "$(date -d "$eow" +%Y%m%d)" ]; do
+            curdate=$(date -I -d "$curdate + 1 day")
+            archive_check=($weekly_archive_path/$curdate-$name)
+            if [ -e "${archive_check[0]}" ];
+            then
+                already_archived=1
+                break
+            fi
+        done
+
+        if [ $already_archived -eq 0 ]; then
+            echo "Copying $filename to weekly archive"
+            cp $f $weekly_archive_path/$filename
+        fi
 	fi
 
 	current_daily=$((current_daily + 1))
